@@ -1,28 +1,27 @@
-library(here)
-library(tidyverse)
-library(leaflet)
-library(raster)
-library(mapview)
-library(leafem)
-library(sf)
-library(leaflet.opacity)
+library(here) # A Simpler Way to Find Your Files
+library(tidyverse) # Easily Install and Load the 'Tidyverse'
+library(leaflet) # Create Interactive Web Maps with the JavaScript 'Leaflet'
+library(raster) # Geographic Data Analysis and Modeling
+library(mapview) # Interactive Viewing of Spatial Data in R
+library(leafem) # 'leaflet' Extensions for 'mapview'
+library(sf) # Simple Features for R
+library(leaflet.opacity) # Opacity Controls for Leaflet Maps
 
-
-# install.packages("leaflet.opacity")
-# leaflet.mapboxgl
-# leaflet.extras 
-# 
-# 
 
 # Read data 
 soc <- raster::raster(here::here("data/socsn.tif"))
 sn <- st_read(here::here("data/sn_enp.shp"))
+qp <- st_read(here::here("data/q_pyr_sn_4326.shp"))
 
+# Transform coordinates
 sn <- st_transform(sn, 4326)
 
+# Create popup for layer
+popup_qp <- paste0("<strong>Population id:</strong> ", qp$POBLACION,
+                   "<br><strong>Name:</strong> ", qp$LOCALIDAD,
+                   "<br><strong>Valley:</strong> ", qp$VALLE)
 
-
-
+# map 
 m <- leaflet() %>% 
   addProviderTiles("Esri.WorldImagery") %>% 
   addMiniMap(tiles = providers$Esri.WorldTerrain, 
@@ -37,53 +36,23 @@ m <- leaflet() %>%
                         type="mouse", 
                         layerId = "soc",
                         digits = 2, 
-                        prefix = "SOC", 
                         className = "hjola") %>% 
   addPolygons(data = sn,
               group= 'Natural Park',
               fillOpacity = 0, 
               color = "black",
               stroke = TRUE) %>% 
+  addPolygons(data = qp,
+              group= 'Quercus pyrenaica forests',
+              fillColor = 'red', fillOpacity = 0.4, 
+              stroke = FALSE, popup = popup_qp) %>% 
   addLayersControl(position = 'bottomright',
                    baseGroups = c("Satellite"),
                    overlayGroups = c('Natural Park',
+                                     'Quercus pyrenaica forests',
                                      'soc'),
                    options = layersControlOptions(collapsed = TRUE)) 
 
 
-library(htmlwidgets)
+library(htmlwidgets) # HTML Widgets for R
 saveWidget(m, "index.html")
-
-
-
-
-
-  
-  # addPolygons(data = qp,
-  #             group= 'Quercus pyrenaica forests',
-  #             fillColor = 'red', fillOpacity = 0, 
-  #             stroke = FALSE) %>% 
-# Base Maps 
-# http://leaflet-extras.github.io/leaflet-providers/preview/index.html
-
-
-soc_id <- expression(SOC^2)
-
-
-addRasterImage(poppendorf[[1]], project = TRUE, group = "poppendorf",
-               layerId = "poppendorf") %>%
-  addImageQuery(poppendorf[[1]], project = TRUE,
-                layerId = "poppendorf") %>%
-  addLayersControl(overlayGroups = "poppendorf")
-
-
-layerId = "socn")
-
-# %>%
-#   addLegend(pal = pal, values = values(r),
-#             title = "Surface temp")
-
-leaflet() %>% 
-  addTiles() %>% 
-  addRasterImage(soc) 
-
